@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import StaleElementReferenceException
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -81,21 +78,6 @@ def taopiaopiaoSpider(url):
     for index_loc in range(1, lens_locations + 1):  # 地点循环
         location_click(driver, wait, index_loc)
 
-
-
-
-for i in range(1, 101):
-    try:
-        taopiaopiaoSpider(
-            "https://dianying.taobao.com/showDetail.htm?spm=a1z21.3046609.w2.4.IRhyJR&showId=199280&n_s=new&source=current")
-        f = open("out.txt", "w")  # 打开文件
-        print("第%d次测试成功" % i, file=f)
-        f.close()
-    except Exception as e:
-        f = open("out.txt", "w")  # 打开文件
-        print("第%d次测试发生错误，错误原因：" % i, file=f)
-        print(e, file=f)
-        f.close()
 
 #
 # def getStaleElemByXpath(xp_string):
