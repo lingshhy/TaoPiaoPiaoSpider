@@ -3,7 +3,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
+import time
 
 # xpath语句
 xp_more_locations = "//ul[@class='filter-select']/li[2]/a"  # 更多影院标签
@@ -21,14 +24,48 @@ xp_screening_flow = 'table[class="hall-table"] > tbody > tr > td[class="hall-flo
 xp_screening_price = 'table[class="hall-table"] > tbody > tr > td[class="hall-price"] > em'  # 该场次上映价格
 
 
-def date_click(driver, wait, index):
-    #  打印日期
-    date = wait.until(EC.presence_of_element_located((By.XPATH, xp_date % index)))
-    print('第%d天为：' % index, date.text)
+def getStaleTextByXpath(driver, wait, xp_string ,index, type):
+    try:
+        wait.until(EC.presence_of_element_located((By.XPATH, xp_string % index)))
+        if(type=='location'):
+            print('第%d个地点为：' % index, driver.find_element_by_xpath(xp_string % index).text)
+        elif(type=='date'):
+            print('第%d天为：' % index, driver.find_element_by_xpath(xp_string % index).text)
+    except StaleElementReferenceException:
+        print("Attempting to recover from StaleElementReferenceException.text ................................................")
+        time.sleep(1)
+        getStaleTextByXpath(driver, wait, xp_string ,index, type)
+    except TimeoutException:
+        print("Attempting to recover from click on TimeoutException.text .....................................................")
+        # driver.save_screenshot('ss.png')
+        # time.sleep(1000)
+        getStaleTextByXpath(driver, wait, xp_string ,index, type)
+    else:
+        pass
 
-    # 尝试选中该日期
-    driver.find_element_by_xpath(xp_date % index).click()  # 点击该日期
-    wait.until(EC.presence_of_element_located((By.XPATH, xp_date_current % index)))  # 等到该日期被选中
+def clickStaleElemByXpath(driver, wait, xp_string, xp_string_current, index, num_recursion=0):
+    try:
+         driver.find_element_by_xpath(xp_string % index).click()
+         wait.until(EC.presence_of_element_located((By.XPATH, xp_string_current % index)))
+#解决了！！！
+    except StaleElementReferenceException:
+        print("Attempting to recover from click on StaleElementReferenceException ...................................... %ds" %num_recursion)
+        time.sleep(1)
+        num_recursion+=1
+        clickStaleElemByXpath(driver, wait, xp_string, xp_string_current, index, num_recursion)
+#测试过程中发现能解决TimeoutException
+    except TimeoutException:
+        print("Attempting to recover from click on TimeoutException .......................................................")
+        clickStaleElemByXpath(driver, wait, xp_string, xp_string_current, index, num_recursion)
+    else:
+        pass
+
+def date_click(driver, wait, index):
+
+    #  打印日期
+    getStaleTextByXpath(driver, wait, xp_date, index, type='date')
+
+    clickStaleElemByXpath(driver, wait, xp_date, xp_date_current, index)
 
     screenings = driver.find_elements_by_xpath("//tbody/tr")
     lens_screenings = len(screenings)
@@ -48,16 +85,15 @@ def date_click(driver, wait, index):
 
 def location_click(driver, wait, index):
     # 如果页面没有找到本轮影院按钮，点击更多影院加载
+
+#这里应该是最后一个BUG
     if not driver.find_element_by_xpath(xp_location % index).is_displayed():
         driver.find_element_by_xpath(xp_more_locations).click()
 
     # 打印影院名称
-    location = wait.until(EC.presence_of_element_located((By.XPATH, xp_location % index)))
-    print('第%d个地点为：' % index, location.text)
+    getStaleTextByXpath(driver, wait, xp_location, index, type='location')
 
-    # 尝试选中影院
-    driver.find_element_by_xpath(xp_location % index).click()  # 点击该影城
-    wait.until(EC.presence_of_element_located((By.XPATH, xp_location_current % index)))  # 等到该影城被选中
+    clickStaleElemByXpath(driver, wait, xp_location, xp_location_current, index)
 
     lens_date = len(driver.find_elements_by_xpath(xp_dates))
     print('该影院总共有%d天放映' % lens_date)
@@ -77,28 +113,15 @@ def taopiaopiaoSpider(url):
 
     for index_loc in range(1, lens_locations + 1):  # 地点循环
         location_click(driver, wait, index_loc)
+    driver.close()
 
-
-#
-# def getStaleElemByXpath(xp_string):
-#     try:
-#         print(xp_string)
-#         print(type(xp_string))
-#         print(type(xp_string.encode()))
-#         print(type(xp_string.encode().decode('utf-8')))
-#         return driver.find_element_by_xpath((By.XPATH, xp_string))
-#     except StaleElementReferenceException:
-#         print("Attempting to recover from StaleElementReferenceException ...")
-#         return getStaleElemByXpath(xp_string)
+# taopiaopiaoSpider(
+#             "https://dianying.taobao.com/showDetail.htm?spm=a1z21.6646273.w2.3.CayLtL&showId=217389&n_s=new&source=current")
 
 # 相比之前的语句分开写，应该避免了StaleElementReferenceException,即第二个语句时出现元素引用过久的错误，不过出现了TimeoutException
 # 有意思了，这个错误是在南京第24个发生，发生了两次，所以我在网页检查了下，这个错误是因为快到电影场次时间，停止售票，而带来的标签改换
 # 这个BUG还没有修正
-# 也就是说为了，健壮性考虑，不要使用纯索引去定位标签，而是要用UI特征
-# stackoverflow的一段话：In general, your XPath expression is very fragile
-# - don't rely on the layout-oriented classes like yt-uix-button-size-small or yt-uix-expander-head.
-# Instead, for instance, rely on the button text which is "Filters".
-# TMD还是有StaleElementReferenceException：Element is no longer attached to the DOM
+
 # Element not found in the cache - perhaps the page has changed since it was looked up
 # WebDriverException
 # WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//tbody/tr")))

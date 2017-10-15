@@ -1,12 +1,10 @@
+# -*- coding: utf-8 -*-
 import time
 import traceback
 from taopiaopiaoSpider import taopiaopiaoSpider
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import TimeoutException
-
-# taopiaopiaoSpider(
-#             "https://dianying.taobao.com/showDetail.htm?spm=a1z21.3046609.w2.4.IRhyJR&showId=199280&n_s=new&source=current")
 
 num_success,num__nosuch,num_stale,num_time,num_others=0,0,0,0,0
 
@@ -15,7 +13,7 @@ for i in range(1, 101):
         start_time=time.localtime()
         print('第%d次测试于%s开始' %(i,time.strftime("%Y-%m-%d %H:%M:%S",start_time)))
         taopiaopiaoSpider(
-            "https://dianying.taobao.com/showDetail.htm?spm=a1z21.3046609.w2.4.IRhyJR&showId=199280&n_s=new&source=current")
+            "https://dianying.taobao.com/showDetail.htm?spm=a1z21.6646273.w2.3.CayLtL&showId=217389&n_s=new&source=current")
         f = open("out.txt", "a")  # 打开文件
         print("第%d次测试成功" % i, file=f)
         num_success+=1
