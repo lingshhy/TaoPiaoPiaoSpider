@@ -104,11 +104,11 @@ def date_click(driver, wait, index, location):
     screening_flow = bs.select(xp_screening_flow)
     screening_price = bs.select(xp_screening_price)
     for index, item in enumerate(screening_time):
-        s=(location, date, item.get_text().strip(),
+        s=[location, date, item.get_text().strip(),
            screening_type[index].get_text().strip(),
            screening_name[index].get_text().strip(),
            screening_flow[index].get_text().strip(),
-           float(screening_price[index].get_text().strip()))
+           float(screening_price[index].get_text().strip())]
         # print(index + 1, s)
         saveDatas(db, cursor, results=s)
 

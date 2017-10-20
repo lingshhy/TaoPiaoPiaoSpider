@@ -7,8 +7,8 @@ import pymysql
 sql = """CREATE TABLE xiuxiudetiequan (
         ID INT AUTO_INCREMENT,
         CINEMA_NAME CHAR(50) NOT NULL,
-        ONDATE CHAR(20) NOT NULL,
-        ONTIME  CHAR(20) NOT NULL,
+        ONDATE DATE NOT NULL,
+        ONTIME  TIME NOT NULL,
         TYPE CHAR(20), 
         MALL_NAME CHAR(50),
         SEAT_STATUS CHAR(20),
