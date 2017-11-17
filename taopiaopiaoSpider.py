@@ -146,7 +146,7 @@ def taopiaopiaoSpider(url):
     driver.close()
 
 taopiaopiaoSpider(
-            "https://dianying.taobao.com/showDetail.htm?spm=a1z21.3046609.w2.8.hLWoyl&showId=164219&n_s=new&source=current")
+            "https://dianying.taobao.com/showDetail.htm?spm=a1z21.3046609.w2.4.l62kmd&showId=168600&n_s=new&source=current")
 
 # 相比之前的语句分开写，应该避免了StaleElementReferenceException,即第二个语句时出现元素引用过久的错误，不过出现了TimeoutException
 # 有意思了，这个错误是在南京第24个发生，发生了两次，所以我在网页检查了下，这个错误是因为快到电影场次时间，停止售票，而带来的标签改换
