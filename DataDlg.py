@@ -2,10 +2,12 @@ import os
 import sys
 import qtmodern.styles
 import qtmodern.windows
-from PyQt5.QtCore import (QFile, QVariant, Qt)
-from PyQt5.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QMenu,
-        QMessageBox, QTableView, QVBoxLayout)
+from PyQt5.QtCore import (QFile, QVariant, Qt, pyqtSlot)
+from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QDialog, QDialogButtonBox, QMenu,
+        QMessageBox, QTableView, QVBoxLayout, QComboBox, QPushButton)
 from PyQt5.QtSql import (QSqlDatabase, QSqlQuery, QSqlTableModel)
+
+from taopiaopiaoSpider import get_movie_table_name
 
 MAC = True
 try:
@@ -13,7 +15,7 @@ try:
 except ImportError:
     MAC = False
 
-# ID, CATEGORY, SHORTDESC, LONGDESC = range(4)
+
 ID, CINEMA_NAME, ONDATE, ONTIME, TYPE, MALL_NAME, SEAT_STATUS, PRICE = range(8)
 
 
@@ -21,16 +23,29 @@ class ReferenceDataDlg(QDialog):
 
     def __init__(self, parent=None):
         super(ReferenceDataDlg, self).__init__(parent)
-        self.resize(1000,600)
+        self.movie = ""
+
+        self.resize(960, 600)
+        self.setWindowTitle("淘票票数据")
+        self.center()
+
+
+        # 数据界面
+        self.cmb_data_movie = QComboBox(self)
+        self.cmb_data_movie.move(40, 80)
+        self.cmb_data_movie.resize(300, 40)
+        self.cmb_data_movie.activated.connect(self.cmb_current_movie_clicked)
+
+        self.btn_show = QPushButton("显示数据", self)
+        self.btn_show.move(380, 80)
+        self.btn_show.resize(60, 40)
+        self.btn_show.clicked.connect(self.show_data)
+
+        self.bind_data_movie()
+
         self.model = QSqlTableModel(self)
-        # self.model.setTable("reference")
-        self.model.setTable("movieslist")
-        # self.model.setSort(ID, Qt.AscendingOrder)
+        #self.model.setTable("movieslist")
         self.model.setSort(ID, Qt.AscendingOrder)
-        # self.model.setHeaderData(ID, Qt.Horizontal, "ID")
-        # self.model.setHeaderData(CATEGORY, Qt.Horizontal,"Category")
-        # self.model.setHeaderData(SHORTDESC, Qt.Horizontal,"Short Desc.")
-        # self.model.setHeaderData(LONGDESC, Qt.Horizontal,"Long Desc.")
         self.model.setHeaderData(ID, Qt.Horizontal, "ID")
         self.model.setHeaderData(CINEMA_NAME, Qt.Horizontal, "CINEMA_NAME")
         self.model.setHeaderData(ONDATE, Qt.Horizontal, "ONDATE")
@@ -41,7 +56,9 @@ class ReferenceDataDlg(QDialog):
         self.model.setHeaderData(PRICE, Qt.Horizontal, "PRICE")
         self.model.select()
 
-        self.view = QTableView()
+        self.view = QTableView(self)
+        self.view.move(40,160)
+        self.view.resize(200,160)
         self.view.setModel(self.model)
         self.view.setSelectionMode(QTableView.SingleSelection)
         self.view.setSelectionBehavior(QTableView.SelectRows)
@@ -67,10 +84,10 @@ class ReferenceDataDlg(QDialog):
         sortButton.setMenu(menu)
         closeButton = buttonBox.addButton(QDialogButtonBox.Close)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.view)
-        layout.addWidget(buttonBox)
-        self.setLayout(layout)
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.view)
+        # layout.addWidget(buttonBox)
+        # self.setLayout(layout)
 
         addButton.clicked.connect(self.addRecord)
         deleteButton.clicked.connect(self.deleteRecord)
@@ -80,6 +97,31 @@ class ReferenceDataDlg(QDialog):
         closeButton.clicked.connect(self.accept)
         self.setWindowTitle("Reference Data")
 
+    # 获取数据库中的电影表，绑定下拉单控件
+    def bind_data_movie(self):
+        movie_list = get_movie_table_name()
+        if len(movie_list) > 0:
+            self.movie = movie_list[0][0]
+        for movie in movie_list:
+            self.cmb_data_movie.addItem(movie[0])
+        self.cmb_data_movie.addItem("movieslist")
+
+    @pyqtSlot(int)
+    def cmb_current_movie_clicked(self, index):
+        self.movie = self.cmb_data_movie.itemText(index)
+
+    @pyqtSlot()
+    def show_data(self):
+        print(self.movie)
+        self.model.setTable(self.movie)
+        self.model.select()
+
+    # 居中
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
     def addRecord(self):
         row = self.model.rowCount()
@@ -114,12 +156,7 @@ class ReferenceDataDlg(QDialog):
 
 def main():
     app = QApplication(sys.argv)
-
     filename = os.path.join(os.path.dirname(__file__), "reference.db")
-    # create = not QFile.exists(filename)
-
-    # db = QSqlDatabase.addDatabase("QSQLITE")
-    # db.setDatabaseName(filename)
     db = QSqlDatabase.addDatabase("QMYSQL")
     db.setHostName("localhost")
     db.setUserName("root")
@@ -130,15 +167,6 @@ def main():
         QMessageBox.warning(None, "Reference Data",
             "Database Error: {0}".format(db.lastError().text()))
         sys.exit(1)
-
-    # if create:
-    #     query = QSqlQuery()
-    #     query.exec_("""CREATE TABLE reference (
-    #             id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-    #             category VARCHAR(30) NOT NULL,
-    #             shortdesc VARCHAR(20) NOT NULL,
-    #             longdesc VARCHAR(80))""")
-
     form = ReferenceDataDlg()
     qtmodern.styles.dark(app)
     mw=qtmodern.windows.ModernWindow(form)

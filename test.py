@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 import traceback
-from taopiaopiaoSpider import taopiaopiaoSpider
+from taopiaopiaoSpider import taopiaopiao_spider
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import TimeoutException
@@ -12,7 +12,7 @@ for i in range(1, 101):
     try:
         start_time=time.localtime()
         print('第%d次测试于%s开始' %(i,time.strftime("%Y-%m-%d %H:%M:%S",start_time)))
-        taopiaopiaoSpider(
+        taopiaopiao_spider(
             "https://dianying.taobao.com/showDetail.htm?spm=a1z21.6646273.w2.3.CayLtL&showId=217389&n_s=new&source=current")
         f = open("out.txt", "a")  # 打开文件
         print("第%d次测试成功" % i, file=f)
