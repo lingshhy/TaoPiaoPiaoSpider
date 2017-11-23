@@ -20,7 +20,9 @@ class TppDB:
     def is_exist_table(self, table_name):
         sql = """SELECT table_name FROM information_schema.TABLES WHERE table_name = %s;"""
         cursor = self.conn.cursor()
-        return cursor.execute(sql, table_name)
+        res = cursor.execute(sql, table_name)
+        cursor.close()
+        return res
 
     # 创建电影列表
     def create_table_movies_list(self):
@@ -40,6 +42,7 @@ class TppDB:
             cursor = self.conn.cursor()
             cursor.execute(sql)
             self.conn.commit()
+            cursor.close()
         except:
             self.conn.rollback()
             print(traceback.print_exc())
@@ -55,6 +58,7 @@ class TppDB:
             line = cursor.execute(select_sql, movie_name)
             if line == 0:
                 cursor.execute(insert_sql , (movie_name, table_name, movie_href))
+            cursor.close()
         except:
             self.conn.rollback()
             print(traceback.print_exc())
@@ -64,25 +68,30 @@ class TppDB:
         select_sql = """SELECT TABLENAME,HREF FROM movieslist WHERE NAME=%s"""
         cursor = self.conn.cursor()
         cursor.execute(select_sql , movie_name)
-        return cursor.fetchone()
+        res = cursor.fetchone()
+        cursor.close()
+        return res
 
-    # 查找数据库中的电影表
+    # 查找数据库中的电影列表
     def get_movie_table_name(self):
         select_sql = """SELECT NAME FROM movieslist WHERE HASTABLE=1"""
         cursor = self.conn.cursor()
         cursor.execute(select_sql)
-        return cursor.fetchall()
+        res = cursor.fetchall()
+        cursor.close()
+        return res
 
     # 查找数据
     def get_data(self, table_name):
         select_sql = """SELECT * FROM %s"""
         cursor = self.conn.cursor()
         cursor.execute(select_sql % table_name)
-        return cursor.fetchall()
+        res = cursor.fetchall()
+        cursor.close()
+        return res
 
     # 创建电影上映信息表
-    def create_table_movie(self, movie_name):
-        table_name = self.get_table_href(movie_name)[0]
+    def create_movie_table(self, movie_name, table_name):
         # 如果存在该表，则无需创建
         if self.is_exist_table(table_name) == 1:
             return
@@ -106,6 +115,7 @@ class TppDB:
             cursor = self.conn.cursor()
             cursor.execute(create_sql % table_name)
             cursor.execute(update_sql, movie_name)
+            cursor.close()
             self.conn.commit()
         except:
             self.conn.rollback()
@@ -122,8 +132,10 @@ class TppDB:
         try:
             cursor = self.conn.cursor()
             cursor.execute(insert_sql, results)
+            cursor.close()
             self.commit()
         except:
+            print(results)
             self.conn.rollback()
             print(traceback.print_exc())
 
