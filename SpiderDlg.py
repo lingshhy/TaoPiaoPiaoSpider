@@ -68,6 +68,8 @@ class SpiderDlg(QDialog):
         super().__init__()
         self.movie = ""
         self.table = ""
+        self.sort_column = ID
+        self.sort_order = Qt.AscendingOrder
         self.initUI()
 
 
@@ -114,16 +116,6 @@ class SpiderDlg(QDialog):
         self.cmb_data_movie.activated.connect(self.cmb_data_movie_clicked)
 
         self.model = QSqlTableModel(self)
-        self.model.setSort(ID, Qt.AscendingOrder)
-        self.model.setHeaderData(ID, Qt.Horizontal, "ID")
-        self.model.setHeaderData(CINEMA_NAME, Qt.Horizontal, "CINEMA_NAME")
-        self.model.setHeaderData(ONDATE, Qt.Horizontal, "ONDATE")
-        self.model.setHeaderData(ONTIME, Qt.Horizontal, "ONTIME")
-        self.model.setHeaderData(TYPE, Qt.Horizontal, "TYPE")
-        self.model.setHeaderData(MALL_NAME, Qt.Horizontal, "MALL_NAME")
-        self.model.setHeaderData(SEAT_STATUS, Qt.Horizontal, "SEAT_STATUS")
-        self.model.setHeaderData(PRICE, Qt.Horizontal, "PRICE")
-        self.model.select()
 
         self.view = QTableView(self)
         self.view.move(40, 220)
@@ -132,9 +124,58 @@ class SpiderDlg(QDialog):
         self.view.setSelectionMode(QTableView.SingleSelection)
         self.view.setSelectionBehavior(QTableView.SelectRows)
         self.view.setColumnHidden(ID, True)
-        self.view.resizeColumnsToContents()
 
         self.bind_data_movie()
+
+        # 排序按钮
+        # buttonBox = QDialogButtonBox(self)
+        # buttonBox.move(380, 160)
+        #sortButton =  ("&Sort",
+        #                                 QDialogButtonBox.ActionRole)
+        sort_button = QPushButton("排序", self)
+        sort_button.move(380, 160)
+        sort_button.resize(60, 40)
+
+        menu = QMenu(self)
+        sort_by_cinemaname_action = menu.addAction("按&影&城排序")
+        sort_by_date_action = menu.addAction("按&日&期排序")
+        sort_by_seatstatus_action = menu.addAction("按&座&位&情&况排序")
+        sort_by_price_action = menu.addAction("按&价&格排序")
+
+        sort_by_cinemaname_action.triggered.connect(lambda:self.sort(CINEMA_NAME))
+        sort_by_date_action.triggered.connect(lambda:self.sort(ONDATE))
+        sort_by_seatstatus_action.triggered.connect(lambda:self.sort(SEAT_STATUS))
+        sort_by_price_action.triggered.connect(lambda: self.sort(PRICE))
+
+        sort_button.setMenu(menu)
+
+
+    def sort(self, column):
+        if self.sort_column == column:
+            if self.sort_order == Qt.AscendingOrder:
+                self.sort_order = Qt.DescendingOrder
+            else:
+                self.sort_order = Qt.AscendingOrder
+        else:
+            self.sort_column = column
+            self.sort_order = Qt.AscendingOrder
+        self.show_data()
+
+    def show_data(self):
+        self.model.setTable(self.table)
+        self.model.setSort(self.sort_column, self.sort_order)
+        self.model.setHeaderData(ID, Qt.Horizontal, "ID")
+        self.model.setHeaderData(CINEMA_NAME, Qt.Horizontal, "影城")
+        self.model.setHeaderData(ONDATE, Qt.Horizontal, "日期")
+        self.model.setHeaderData(ONTIME, Qt.Horizontal, "放映时间")
+        self.model.setHeaderData(TYPE, Qt.Horizontal, "语言版本")
+        self.model.setHeaderData(MALL_NAME, Qt.Horizontal, "放映厅")
+        self.model.setHeaderData(SEAT_STATUS, Qt.Horizontal, "座位情况")
+        self.model.setHeaderData(PRICE, Qt.Horizontal, "影院价（元）")
+        self.model.select()
+        self.view.hideColumn(ID)
+        self.view.resizeColumnsToContents()
+
     @pyqtSlot(str)
     def update_lbl_print(self, text):
         self.lbl_print.setText(text)
@@ -168,9 +209,10 @@ class SpiderDlg(QDialog):
 
     @pyqtSlot(int)
     def cmb_data_movie_clicked(self, index):
+        self.sort_column = ID
+        self.sort_order = Qt.AscendingOrder
         self.table = get_table(self.cmb_data_movie.itemText(index))
-        self.model.setTable(self.table)
-        self.model.select()
+        self.show_data()
 
     def bind_data_movie(self):
         self.cmb_data_movie.clear()
